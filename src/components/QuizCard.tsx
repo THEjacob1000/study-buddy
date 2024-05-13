@@ -53,7 +53,7 @@ const QuizCard = () => {
     },
   });
 
-  const handleCardClick = () => {
+  const handleCardClick = useCallback(() => {
     if (questionState === "answer") {
       const randomQuestion =
         quizQuestions[
@@ -62,7 +62,7 @@ const QuizCard = () => {
       setCurrentQuestion(randomQuestion);
       setQuestionState("question");
     }
-  };
+  }, [questionState]);
 
   const onSubmit = useCallback(
     async (values: z.infer<typeof formSchema>) => {
@@ -98,9 +98,16 @@ const QuizCard = () => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key === "Enter") {
+      if (
+        event.ctrlKey &&
+        event.key === "Enter" &&
+        questionState === "question"
+      ) {
         event.preventDefault();
         form.handleSubmit(onSubmit)();
+      }
+      if (event.key === "Enter" && questionState === "answer") {
+        handleCardClick();
       }
     };
 
@@ -109,7 +116,7 @@ const QuizCard = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [form, onSubmit]);
+  }, [form, handleCardClick, onSubmit, questionState]);
 
   if (!currentQuestion) {
     return <p>Loading...</p>;
@@ -138,7 +145,7 @@ const QuizCard = () => {
               questionState === "answer" ? aiResponse : question,
           }}
         />
-        {questionState === "question" && (
+        {questionState === "question" ? (
           <CardContent className="w-full md:px-12 px-2 pt-20">
             <Form {...form}>
               <form
@@ -185,6 +192,10 @@ const QuizCard = () => {
                 )}
               </form>
             </Form>
+          </CardContent>
+        ) : (
+          <CardContent className="w-full flex justify-center items-center text-muted-foreground">
+            Click here or press Enter to continue
           </CardContent>
         )}
       </CardHeader>

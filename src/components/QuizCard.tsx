@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 import {
   Card,
   CardContent,
@@ -39,20 +40,24 @@ const QuizCard = () => {
   const [currentQuestion, setCurrentQuestion] =
     useState<QuizQuestion | null>(null);
   const [aiResponse, setAiResponse] = useState<string>("");
+
   useEffect(() => {
     const randomQuestion =
       quizQuestions[Math.floor(Math.random() * quizQuestions.length)];
     setCurrentQuestion(randomQuestion);
   }, []);
+
   const formSchema = z.object({
     answer: z.string().min(2),
   });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       answer: "",
     },
   });
+
   const handleCardClick = () => {
     if (questionState === "answer") {
       const randomQuestion =
@@ -67,6 +72,7 @@ const QuizCard = () => {
   if (!currentQuestion) {
     return <p>Loading...</p>;
   }
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const response = await axios.post(
@@ -82,13 +88,19 @@ const QuizCard = () => {
           },
         }
       );
-      setAiResponse(response.data.choices[0].message.content);
+      const sanitizedResponse = DOMPurify.sanitize(
+        response.data.choices[0].message.content
+      );
+      setAiResponse(sanitizedResponse);
       setQuestionState("answer");
+      form.reset();
     } catch (error) {
       console.error(error);
     }
   };
+
   const { question, answer } = currentQuestion;
+
   return (
     <Card
       className={
@@ -104,9 +116,11 @@ const QuizCard = () => {
               ? "md:text-4xl text-card-foreground"
               : "md:text-3xl text-muted-foreground"
           )}
-        >
-          {questionState === "answer" ? aiResponse : question}
-        </CardTitle>
+          dangerouslySetInnerHTML={{
+            __html:
+              questionState === "answer" ? aiResponse : question,
+          }}
+        />
         {questionState === "question" && (
           <CardContent className="w-full md:px-12 px-2 pt-20">
             <Form {...form}>

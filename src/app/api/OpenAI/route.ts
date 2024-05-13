@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     messages: [
       {
         role: "system",
-        content: `You are assisting the user in their study. Compare their given answer to the provided demo answer. If their answer is incorrect or insufficient, explain why. The current question is: "${question}". The demo answer is: "${demoAnswer}". Ensure that you phrase your response as if you are talking directly to the user.`,
+        content: `You are assisting the user in their study. Compare their given answer to the provided demo answer. If their answer is incorrect or insufficient, explain why. The current question is: "${question}". The demo answer is: "${demoAnswer}". Ensure that you phrase your response as if you are talking directly to the user and render any formatting you'd like to use in your response as html. Additionally, if they are incorrect, try to direct them to relevant documentation; phrase it like this: <br><br>You can find further information on this topic at: <br><a href="<link>">Source Name</a>/`,
       },
       { role: "user", content: `${answer}` },
     ],

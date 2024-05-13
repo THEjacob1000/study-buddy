@@ -19,7 +19,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Textarea } from "./ui/textarea";
 import axios from "axios";
-import Image from "next/image";
+import Markdown from "markdown-to-jsx";
 import LoadingSpinner from "./LoadingSpinner";
 
 type QuizQuestion = {
@@ -138,13 +138,15 @@ const QuizCard = () => {
             "my-12 mx-4 text-center md:text-responsive",
             questionState === "question"
               ? "md:text-4xl text-card-foreground"
-              : "md:text-3xl text-muted-foreground"
+              : "md:text-3xl text-muted-foreground text-start"
           )}
-          dangerouslySetInnerHTML={{
-            __html:
-              questionState === "answer" ? aiResponse : question,
-          }}
-        />
+        >
+          {questionState === "answer" ? (
+            <Markdown>{aiResponse}</Markdown>
+          ) : (
+            question
+          )}
+        </CardTitle>
         {questionState === "question" ? (
           <CardContent className="w-full md:px-12 px-2 pt-20">
             <Form {...form}>

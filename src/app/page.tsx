@@ -10,9 +10,9 @@ export default function Home() {
         </h1>
         <ModeToggle />
       </div>
-      <h2 className="my-6 font-xl font-semibold text-muted-foreground text-center">
-        Click the question when you think you have the answer, then
-        click the card again for a new question
+      <h2 className="mb-6 md:mt-20 mt-6 font-xl font-semibold text-muted-foreground text-center">
+        Submit your answer to the question using the textbox below,
+        then click the card again for a new question
       </h2>
       <div className="md:w-1/2 w-full mt-2 md:mt-12">
         <QuizCard />

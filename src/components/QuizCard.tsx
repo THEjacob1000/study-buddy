@@ -108,7 +108,7 @@ const QuizCard = () => {
           {questionState === "answer" ? aiResponse : question}
         </CardTitle>
         {questionState === "question" && (
-          <CardContent className="w-full px-12 pt-20">
+          <CardContent className="w-full md:px-12 px-2 pt-20">
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}

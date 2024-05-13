@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Study Buddy Documentation
 
-## Getting Started
+## Overview
 
-First, run the development server:
+Study Buddy is a study aid application similar to Quizlet, designed to help users prepare for interview questions by leveraging OpenAI's API. Users can type in their answers, and the app provides corrections and suggestions for improvement.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **OpenAI Integration**: Uses OpenAI API to evaluate user responses.
+- **Customizable Questions and Answers**: Easily modify the set of questions and demo answers.
+- **Interactive UI**: Responsive design with dynamic feedback on user answers.
+- **Keyboard Shortcuts**: Submit answers quickly using "Ctrl + Enter".
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Repository
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+The source code for Study Buddy is available on GitHub:
+[Study Buddy Repository](https://github.com/THEjacob1000/study-buddy)
 
-## Learn More
+## Prerequisites
 
-To learn more about Next.js, take a look at the following resources:
+- **OpenAI API Key**: Obtain an API key from OpenAI. [Get API Key](https://platform.openai.com/api-keys)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Setup Instructions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+1. **Clone the Repository**:
 
-## Deploy on Vercel
+   ```bash
+   git clone https://github.com/THEjacob1000/study-buddy.git
+   cd study-buddy
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. **Create Environment Variable:**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+   - Create a .env file in the root directory.
+   - Add the following line with your OpenAI API key:
+
+     ```bash
+     OPENAI_API_KEY=<your api key here>
+     ```
+
+3. **Install Dependencies**
+
+   ```bash
+   pnpm install
+   ```
+
+4. **Run the Application:**
+
+   ```bash
+   pnpm dev
+   ```
+
+## Usage
+
+1. **Local Development**:
+
+   - The application is designed to be run locally for individual use.
+   - To start, simply run the development server with `pnpm dev`.
+
+2. **Remote Hosting**:
+   - You can host the application remotely, but be mindful of API costs as OpenAI charges per API request.
+   - Ensure your environment variables are securely managed in a production environment.
+
+## Customization
+
+1. **Adjusting Bot Response**:
+
+   - Modify the system content in the `requestData` variable located at `/api/OpenAI/route.ts`.
+
+2. **Editing Demo Answers**:
+   - The array of questions and answers can be edited in `@/lib/studyQuestions.ts`.
+   - Ensure the array follows the structure `{question: string, answer: string}`.
+
+## Keyboard Shortcuts
+
+- **Submit Answer**: Press "Ctrl + Enter" to submit your answer quickly.
+
+## FAQ
+
+### Does it work locally?
+
+Yes, you can run the app in your local environment after setting the API key.
+
+### Can I host it remotely?
+
+Yes, you can host it remotely. However, be cautious with API key usage as it could incur costs if accessed by multiple users.
+
+### How do I modify the bot's response?
+
+Adjust the `system` content in `requestData` in `/api/OpenAI/route.ts`.
+
+### How do I change the questions and answers?
+
+Edit the array in `@/lib/studyQuestions.ts` to include your desired questions and answers.
+
+## Contributions
+
+Feel free to contribute to the project by forking the repository and submitting pull requests.
+
+---
+
+### **Created by Jacob Sanderson**

@@ -1,25 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DOMPurify from "dompurify";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { quizQuestions } from "@/lib/studyQuestions";
 import { cn } from "@/lib/utils";
 import { useForm } from "react-hook-form";
@@ -27,6 +19,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Textarea } from "./ui/textarea";
 import axios from "axios";
+import Image from "next/image";
+import LoadingSpinner from "./LoadingSpinner";
 
 type QuizQuestion = {
   question: string;
@@ -40,6 +34,7 @@ const QuizCard = () => {
   const [currentQuestion, setCurrentQuestion] =
     useState<QuizQuestion | null>(null);
   const [aiResponse, setAiResponse] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const randomQuestion =
@@ -69,37 +64,59 @@ const QuizCard = () => {
     }
   };
 
+  const onSubmit = useCallback(
+    async (values: z.infer<typeof formSchema>) => {
+      setLoading(true);
+      try {
+        const response = await axios.post(
+          "/api/OpenAI",
+          {
+            question: currentQuestion?.question,
+            demoAnswer: currentQuestion?.answer,
+            answer: values.answer,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        const sanitizedResponse = DOMPurify.sanitize(
+          response.data.choices[0].message.content
+        );
+        setAiResponse(sanitizedResponse);
+        setQuestionState("answer");
+        form.reset();
+        setLoading(false);
+      } catch (error) {
+        console.error(error);
+        setLoading(false);
+      }
+    },
+    [currentQuestion, form]
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key === "Enter") {
+        event.preventDefault();
+        form.handleSubmit(onSubmit)();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [form, onSubmit]);
+
   if (!currentQuestion) {
     return <p>Loading...</p>;
   }
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const response = await axios.post(
-        "/api/OpenAI",
-        JSON.stringify({
-          question: currentQuestion.question,
-          demoAnswer: currentQuestion.answer,
-          answer: values.answer,
-        }),
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const sanitizedResponse = DOMPurify.sanitize(
-        response.data.choices[0].message.content
-      );
-      setAiResponse(sanitizedResponse);
-      setQuestionState("answer");
-      form.reset();
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const { question, answer } = currentQuestion;
+  const { question } = currentQuestion;
+  console.log(loading);
 
   return (
     <Card
@@ -145,7 +162,27 @@ const QuizCard = () => {
                     </FormItem>
                   )}
                 />
-                <Button type="submit">Submit</Button>
+                {!loading ? (
+                  <Button type="submit" className="w-1/3">
+                    Submit (
+                    <span className="bg-accent/80 text-xs p-1 mx-1">
+                      Ctrl
+                    </span>{" "}
+                    +{" "}
+                    <span className="bg-accent/80 text-xs p-1 mx-1">
+                      Enter
+                    </span>
+                    )
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    disabled={true}
+                    className="w-1/3"
+                  >
+                    <LoadingSpinner size={24} />
+                  </Button>
+                )}
               </form>
             </Form>
           </CardContent>

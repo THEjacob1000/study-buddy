@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import { NextResponse, NextRequest } from "next/server";
 
 type Question = {
@@ -9,15 +9,22 @@ type Question = {
 
 export async function POST(req: NextRequest) {
   try {
-    const requestData = await req.json();
-    const { input, apiKey } = requestData;
+    const questionData = await req.json();
+    const { input, apiKey } = questionData;
+    const currentAPI = apiKey || process.env.OPENAI_API_KEY;
 
-    // Create an instance of axios with the provided API key
+    if (!currentAPI) {
+      return NextResponse.json(
+        { error: "API key is required" },
+        { status: 400 }
+      );
+    }
+
     const openai = axios.create({
       baseURL: "https://api.openai.com/v1",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${currentAPI}`,
       },
     });
 
@@ -28,8 +35,8 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: "system",
-            content: `You are an assistant that helps users organize their study material. The user will provide a text with questions (and optionally answers).
-                        Your task is to parse the input and return a structured format of questions and answers (in the form of an array [{question: question1, answer: answer1}]. If an answer is missing, leave it empty.`,
+            content: `You are an assistant that helps users organize their study material. The user will provide a text with questions (and optionally answers). 
+                      Your task is to parse the input and return a structured format of questions and answers. If an answer is missing, leave it empty.`,
           },
           {
             role: "user",
@@ -42,7 +49,6 @@ export async function POST(req: NextRequest) {
         "/chat/completions",
         requestData
       );
-      console.log(response.data);
       return JSON.parse(response.data.choices[0].message.content);
     };
 
@@ -78,7 +84,13 @@ export async function POST(req: NextRequest) {
     // Return the formatted questions and answers as JSON response
     return NextResponse.json(parsedQuestions);
   } catch (error: any) {
-    console.error(error.message);
+    if (error instanceof AxiosError) {
+      console.error(error.message);
+      return NextResponse.json(
+        { error: error.message, details: error.response?.data },
+        { status: error.response?.status || 500 }
+      );
+    }
     return NextResponse.json(
       { error: error.message },
       { status: 500 }

@@ -43,10 +43,14 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
   const [aiResponse, setAiResponse] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [correct, setCorrect] = useState<boolean>(false);
+  const [localApi, setLocalApi] = useState<string | null>(null);
+  const [maxQuestions, setMaxQuestions] = useState<number>(0);
 
   useEffect(() => {
     const initialQuestions = () => {
       const storedQuestions = localStorage.getItem("quizQuestions");
+      const originalMax = localStorage.getItem("Max Questions");
+      originalMax && setMaxQuestions(parseInt(originalMax));
       if (storedQuestions) {
         return JSON.parse(storedQuestions);
       } else {
@@ -58,6 +62,7 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
       }));
     };
     setQuestions(initialQuestions());
+    setLocalApi(localStorage.getItem("api"));
   }, []);
   useEffect(() => {
     const randomQuestion =
@@ -104,6 +109,7 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
             question: currentQuestion?.question,
             demoAnswer: currentQuestion?.answer,
             answer: values.answer,
+            apiKey: localApi,
           },
           {
             headers: {
@@ -153,6 +159,7 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
       currentQuestion?.answer,
       currentQuestion?.question,
       form,
+      localApi,
       questions,
       setCompleted,
     ]

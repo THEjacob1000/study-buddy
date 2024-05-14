@@ -3,17 +3,17 @@ import axios, { AxiosResponse } from "axios";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
-  const openai = axios.create({
-    baseURL: "https://api.openai.com/v1",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-  });
-
   try {
     const questionData = await req.json();
-    const { question, demoAnswer, answer } = questionData;
+    const { question, demoAnswer, answer, apiKey } = questionData;
+    const currentAPI = apiKey ? apiKey : process.env.OPENAI_API_KEY;
+    const openai = axios.create({
+      baseURL: "https://api.openai.com/v1",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${currentAPI}`,
+      },
+    });
 
     const requestData = {
       model: "gpt-3.5-turbo",

@@ -10,25 +10,46 @@ export async function POST(req: NextRequest) {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
     },
   });
-  const questionData = await await req.json();
-  const { question, demoAnswer, answer } = questionData;
-  const requestData = {
-    model: "gpt-3.5-turbo",
-    messages: [
-      {
-        role: "system",
-        content: `You are assisting the user in their study. Compare their given answer to the provided demo answer. If their answer is incorrect or insufficient, explain why. The current question is: "${question}". The demo answer is: "${demoAnswer}". Ensure that you phrase your response as if you are talking directly to the user and use Markdown formatting in your response. Additionally, if they are incorrect, try to direct them to relevant documentation; phrase it like this:\n\nYou can find further information on this topic at: \n[Source Name](<link>)`,
-      },
-      { role: "user", content: `${answer}` },
-    ],
-  };
 
   try {
+    const questionData = await req.json();
+    const { question, demoAnswer, answer } = questionData;
+
+    const requestData = {
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: `You are assisting the user in their study. Compare their answer to the provided demo answer. Use your best judgment to determine whether
+                    the answer would pass the interview question, considering that the demo answer is just a guideline and not a model to be matched perfectly.
+                    If their answer is incorrect or insufficient, explain the difference between the answer they provided and what the correct answer is and how
+                    to fix it. If the answer is correct, start your response with "Correct!". If it is incorrect, start your response with "Incorrect". If the
+                    current question asks about a user's personal background (experience or inclinations), ignore the demo answer and mark the answer as correct.
+                    Ensure that you don't provide a response that requires the user to give you additional input as they will be unable to do so. The current
+                    question is: "${question}". The demo answer is: "${demoAnswer}". Ensure that your response is conversational and use Markdown formatting.
+                    If they are incorrect, direct them to relevant documentation with the following format:
+                    You can find further information on this topic at:  
+                    [Source Name](<link>)
+                    `,
+        },
+        { role: "user", content: `${answer}` },
+      ],
+    };
+
     const response: AxiosResponse = await openai.post(
       "/chat/completions",
       requestData
     );
-    return NextResponse.json(response.data);
+
+    const aiResponse = response.data.choices[0].message.content;
+    const isCorrect =
+      aiResponse.includes("Correct!") &&
+      !aiResponse.includes("Incorrect");
+
+    return NextResponse.json({
+      message: aiResponse,
+      correct: isCorrect,
+    });
   } catch (error: any) {
     console.error(error.message);
     return NextResponse.json(

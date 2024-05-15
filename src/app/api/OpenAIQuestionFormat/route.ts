@@ -74,10 +74,6 @@ export async function POST(req: NextRequest) {
         "/chat/completions",
         requestData
       );
-      console.log(
-        "AI Response",
-        response.data.choices[0].message.content
-      );
 
       // Remove code block markers if present
       let content = response.data.choices[0].message.content;

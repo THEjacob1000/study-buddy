@@ -48,7 +48,6 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
     const working = async () => {
       const test = await checkKey(storedApi);
       setApiError(null);
-      // console.log("test", test);
       if (test) {
         setHasKey(true);
         const storedQuestions = localStorage.getItem("quizQuestions");
@@ -77,7 +76,6 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
       );
       setProgress(66);
       if (response.status === 200) {
-        // console.log("response", response);
         setHasKey(true);
         setApiError(null);
       }
@@ -85,7 +83,6 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
       setProgress(100);
       return true;
     } catch (error: any) {
-      console.error(error);
       if (error.response && error.response.status === 401) {
         setApiError("Invalid API Key");
       } else if (
@@ -135,7 +132,6 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
       return;
     }
     try {
-      // console.log("data", data, "input", input);
       const response = await axios.post(
         "/api/OpenAIQuestionFormat",
         {
@@ -151,7 +147,6 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
       );
       setProgress(66);
       const responseData = response.data;
-      // console.log(responseData);
       const formattedData = responseData.map((q: any) => ({
         question: q.question,
         answer: q.answer,
@@ -172,14 +167,6 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
     }
   };
 
-  // console.log(
-  //   "initial",
-  //   initial,
-  //   "hasKey",
-  //   hasKey,
-  //   "localApi",
-  //   localApi
-  // );
   if (!hasKey && initial)
     return (
       <Card className="mt-40">

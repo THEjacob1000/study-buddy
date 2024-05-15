@@ -208,9 +208,9 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
             <CardHeader className="w-full flex flex-col justify-center items-center">
               <CardTitle
                 className={cn(
-                  "my-12 mx-4 text-center md:text-responsive",
+                  "my-12 mx-4 text-center md:text-responsive w-full md:px-12 px-2",
                   questionState === "question"
-                    ? "md:text-4xl text-card-foreground"
+                    ? "md:text-4xl text-card-foreground text-start"
                     : "md:text-3xl text-muted-foreground text-start"
                 )}
               >
@@ -225,7 +225,7 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
                   <Form {...form}>
                     <form
                       onSubmit={form.handleSubmit(onSubmit)}
-                      className="flex w-full justify-between items-end"
+                      className="flex w-full md:justify-between items-end flex-wrap gap-4"
                     >
                       <FormField
                         control={form.control}
@@ -236,7 +236,7 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
                             <FormControl>
                               <Textarea
                                 placeholder="Your answer..."
-                                className="w-3/4"
+                                className="w-full"
                                 {...field}
                                 id="textInput"
                                 autoFocus={false}
@@ -247,13 +247,16 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
                         )}
                       />
                       {!loading ? (
-                        <Button type="submit" className="w-1/3">
+                        <Button
+                          type="submit"
+                          className="w-1/3 min-w-fit"
+                        >
                           Submit (
-                          <span className="bg-accent/80 text-xs p-1 mx-1">
+                          <span className="dark:bg-accent/80 bg-accent/30 text-xs p-1 mx-1">
                             Ctrl
                           </span>{" "}
                           +{" "}
-                          <span className="bg-accent/80 text-xs p-1 mx-1">
+                          <span className="dark:bg-accent/80 bg-accent/30 text-xs p-1 mx-1">
                             Enter
                           </span>
                           )

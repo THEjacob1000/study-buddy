@@ -35,6 +35,7 @@ const Options = ({
 
   const removeLocalQuestions = () => {
     localStorage.removeItem("quizQuestions");
+    localStorage.removeItem("Max Questions");
     setHasQuestions(false);
     setInitial(true);
     router.refresh();

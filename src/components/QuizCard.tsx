@@ -12,9 +12,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { quizQuestions } from "@/lib/studyQuestions";
+// import { quizQuestions } from "@/lib/studyQuestions";
 import { cn } from "@/lib/utils";
-import { set, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Textarea } from "./ui/textarea";
@@ -47,27 +47,19 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
   const [maxQuestions, setMaxQuestions] = useState<number>(0);
 
   useEffect(() => {
-    const initialQuestions = () => {
-      const storedQuestions = localStorage.getItem("quizQuestions");
-      const originalMax = localStorage.getItem("Max Questions");
-      originalMax && setMaxQuestions(parseInt(originalMax));
-      if (storedQuestions) {
-        return JSON.parse(storedQuestions);
-      } else {
-        localStorage.setItem("quizQuestions", "[]");
-      }
-      return quizQuestions.map((q) => ({
-        ...q,
-        TimesCorrect: 0,
-      }));
-    };
-    setQuestions(initialQuestions());
+    const storedQuestions = localStorage.getItem("quizQuestions");
+    const initialQuestions = JSON.parse(storedQuestions || "[]");
+    setQuestions(initialQuestions);
+    setMaxQuestions(initialQuestions.length);
     setLocalApi(localStorage.getItem("api"));
   }, []);
+
   useEffect(() => {
-    const randomQuestion =
-      questions[Math.floor(Math.random() * questions.length)];
-    setCurrentQuestion(randomQuestion);
+    if (questions.length > 0) {
+      const randomQuestion =
+        questions[Math.floor(Math.random() * questions.length)];
+      setCurrentQuestion(randomQuestion);
+    }
   }, [questions]);
 
   useEffect(() => {
@@ -123,7 +115,6 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
         const isCorrect = response.data.correct;
         setCorrect(isCorrect);
 
-        // Update TimesCorrect
         const updatedQuestions = questions
           .map((q) =>
             q.question === currentQuestion?.question
@@ -135,7 +126,7 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
                 }
               : q
           )
-          .filter((q) => q.TimesCorrect < 3);
+          .filter((q) => q.TimesCorrect === 0);
         setQuestions(updatedQuestions);
         localStorage.setItem(
           "quizQuestions",
@@ -286,8 +277,7 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
               )}
               <div className="w-full flex justify-between items-center text-muted-foreground">
                 <div>
-                  {quizQuestions.length - questions.length} /{" "}
-                  {quizQuestions.length}
+                  {maxQuestions - questions.length} / {maxQuestions}
                 </div>
                 <div>{currentQuestion.TimesCorrect} / 3</div>
               </div>

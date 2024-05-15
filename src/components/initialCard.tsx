@@ -47,6 +47,8 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
     }
     const working = async () => {
       const test = await checkKey(storedApi);
+      setApiError(null);
+      // console.log("test", test);
       if (test) {
         setHasKey(true);
         const storedQuestions = localStorage.getItem("quizQuestions");
@@ -65,6 +67,7 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
         {
           input: "Test input to validate API key",
           apiKey,
+          apiCheck: true,
         },
         {
           headers: {
@@ -74,6 +77,7 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
       );
       setProgress(66);
       if (response.status === 200) {
+        // console.log("response", response);
         setHasKey(true);
         setApiError(null);
       }
@@ -81,11 +85,17 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
       setProgress(100);
       return true;
     } catch (error: any) {
+      console.error(error);
       if (error.response && error.response.status === 401) {
         setApiError("Invalid API Key");
+      } else if (
+        error.response &&
+        error.response.data.error === "API key is required"
+      ) {
+        setApiError("API Key is required");
       } else {
-        setApiError("An error occurred. Please try again.");
-        console.error(error.message);
+        setApiError(error.response.data.error);
+        console.error(error.response.data.error);
       }
       setLoading(false);
       setProgress(0);
@@ -119,12 +129,19 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
   const onSubmit = async (data: z.infer<typeof questionsSchema>) => {
     setLoading(true);
     setProgress(33);
+    if (!data.questionData && !input) {
+      setLoading(false);
+      setProgress(0);
+      return;
+    }
     try {
+      // console.log("data", data, "input", input);
       const response = await axios.post(
         "/api/OpenAIQuestionFormat",
         {
-          input: data.questionData,
+          input: data.questionData || input,
           apiKey: localApi,
+          apiCheck: false,
         },
         {
           headers: {
@@ -134,10 +151,15 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
       );
       setProgress(66);
       const responseData = response.data;
-      console.log(responseData);
+      // console.log(responseData);
+      const formattedData = responseData.map((q: any) => ({
+        question: q.question,
+        answer: q.answer,
+        TimesCorrect: 0,
+      }));
       localStorage.setItem(
         "quizQuestions",
-        JSON.stringify(responseData)
+        JSON.stringify(formattedData)
       );
       localStorage.setItem("Max Questions", responseData.length);
       setProgress(100);
@@ -150,7 +172,15 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
     }
   };
 
-  if (!hasKey && !initial)
+  // console.log(
+  //   "initial",
+  //   initial,
+  //   "hasKey",
+  //   hasKey,
+  //   "localApi",
+  //   localApi
+  // );
+  if (!hasKey && initial)
     return (
       <Card className="mt-40">
         <CardHeader className="w-full flex items-center justify-center">
@@ -186,7 +216,7 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
                       <Input
                         placeholder="Your API key..."
                         className={cn(
-                          "w-1/2" && apiError && "border-red-500"
+                          "w-1/2" && apiError && "border-border"
                         )}
                         {...field}
                         autoFocus={false}
@@ -208,7 +238,7 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
       </Card>
     );
 
-  if (hasKey && !initial)
+  if (hasKey && initial)
     return (
       <Card className="mt-40">
         <CardHeader className="w-full flex items-center justify-center max-w-[50vw]">
@@ -221,7 +251,7 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
           <Form {...questionsForm}>
             <form
               onSubmit={questionsForm.handleSubmit(onSubmit)}
-              className="w-full flex flex-col items-center"
+              className="w-full flex flex-col items-start"
             >
               <FormField
                 control={questionsForm.control}
@@ -232,7 +262,7 @@ const InitialCard = ({ initial, setInitial }: InitialCardProps) => {
                     <FormControl>
                       <Textarea
                         placeholder="Your question data..."
-                        className="w-3/4"
+                        className="w-full"
                         {...field}
                         id="textInput"
                         value={input}

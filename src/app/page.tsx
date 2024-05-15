@@ -15,8 +15,14 @@ export default function Home() {
   const router = useRouter();
   useEffect(() => {
     const storedQuestions = localStorage.getItem("quizQuestions");
-    !storedQuestions ? setInitial(true) : setInitial(false);
+    storedQuestions ? setInitial(false) : setInitial(true);
     storedQuestions ? setHasQuestions(true) : setHasQuestions(false);
+    console.log(
+      "initial",
+      initial,
+      "storedQuestions",
+      storedQuestions
+    );
     localStorage.getItem("api")
       ? setIsLocal(true)
       : setIsLocal(false);
@@ -32,6 +38,7 @@ export default function Home() {
   const removeLocalQuestions = () => {
     localStorage.removeItem("quizQuestions");
     setHasQuestions(false);
+    setInitial(true);
     router.refresh();
   };
 
@@ -50,7 +57,10 @@ export default function Home() {
               </Button>
             )}
             {hasQuestions && (
-              <Button variant={"outline"} onClick={removeLocalKey}>
+              <Button
+                variant={"outline"}
+                onClick={removeLocalQuestions}
+              >
                 Remove Locally Stored Question Data
               </Button>
             )}

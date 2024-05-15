@@ -31,9 +31,14 @@ type QuizQuestion = {
 interface QuizCardProps {
   isCompleted: boolean;
   setCompleted: (completed: boolean) => void;
+  questionStreak: number;
 }
 
-const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
+const QuizCard = ({
+  setCompleted,
+  isCompleted,
+  questionStreak,
+}: QuizCardProps) => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [questionState, setQuestionState] = useState<
     "question" | "answer"
@@ -126,7 +131,7 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
                 }
               : q
           )
-          .filter((q) => q.TimesCorrect === 0);
+          .filter((q) => q.TimesCorrect < questionStreak);
         setQuestions(updatedQuestions);
         localStorage.setItem(
           "quizQuestions",
@@ -151,6 +156,7 @@ const QuizCard = ({ setCompleted, isCompleted }: QuizCardProps) => {
       currentQuestion?.question,
       form,
       localApi,
+      questionStreak,
       questions,
       setCompleted,
     ]

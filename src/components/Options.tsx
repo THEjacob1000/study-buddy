@@ -10,6 +10,7 @@ import {
 import { Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ModeSwitch from "./ModeSwitch";
+import { Button } from "./ui/button";
 
 interface OptionsProps {
   isLocal: boolean;
@@ -17,6 +18,8 @@ interface OptionsProps {
   setInitial: (initial: boolean) => void;
   hasQuestions: boolean;
   setHasQuestions: (hasQuestions: boolean) => void;
+  questionStreak: number;
+  setQuestionStreak: (questionStreak: number) => void;
 }
 
 const Options = ({
@@ -25,6 +28,8 @@ const Options = ({
   setInitial,
   setHasQuestions,
   hasQuestions,
+  questionStreak,
+  setQuestionStreak,
 }: OptionsProps) => {
   const router = useRouter();
   const removeLocalKey = () => {
@@ -60,7 +65,33 @@ const Options = ({
         >
           Remove Locally Stored Question Data
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem
+          className="flex justify-between"
+          onSelect={(e) => e.preventDefault()}
+        >
+          Question Streak:{" "}
+          <div className="flex gap-2 items-center">
+            <Button
+              variant={"ghost"}
+              className="w-fit rounded-full"
+              size={"sm"}
+              disabled={questionStreak <= 1}
+              onClick={() => setQuestionStreak(questionStreak - 1)}
+            >
+              -
+            </Button>
+            {questionStreak}
+            <Button
+              variant={"ghost"}
+              size={"sm"}
+              className="w-fit rounded-full"
+              onClick={() => setQuestionStreak(questionStreak + 1)}
+            >
+              +
+            </Button>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
           <ModeSwitch />
         </DropdownMenuItem>
       </DropdownMenuContent>

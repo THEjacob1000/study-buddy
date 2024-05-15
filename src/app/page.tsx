@@ -10,6 +10,7 @@ export default function Home() {
   const [initial, setInitial] = useState<boolean>(false);
   const [isLocal, setIsLocal] = useState<boolean>(false);
   const [hasQuestions, setHasQuestions] = useState<boolean>(false);
+  const [questionStreak, setQuestionStreak] = useState<number>(1);
   useEffect(() => {
     const storedQuestions = localStorage.getItem("quizQuestions");
     storedQuestions ? setInitial(false) : setInitial(true);
@@ -30,12 +31,15 @@ export default function Home() {
           setHasQuestions={setHasQuestions}
           setInitial={setInitial}
           setIsLocal={setIsLocal}
+          questionStreak={questionStreak}
+          setQuestionStreak={setQuestionStreak}
         />
       </div>
       {!initial ? (
         <QuizCard
           isCompleted={completed}
           setCompleted={setCompleted}
+          questionStreak={questionStreak}
         />
       ) : (
         <InitialCard initial={initial} setInitial={setInitial} />

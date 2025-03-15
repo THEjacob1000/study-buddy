@@ -21,6 +21,8 @@
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"dompurify": "^3.2.4",
+		"hono": "^4.7.4",
+		"jstack": "^1.0.6",
 		"lucide-react": "^0.482.0",
 		"markdown-to-jsx": "^7.7.4",
 		"next": "15.2.2",

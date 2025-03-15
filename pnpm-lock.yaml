@@ -42,6 +42,12 @@ importers:
       dompurify:
         specifier: ^3.2.4
         version: 3.2.4
+      hono:
+        specifier: ^4.7.4
+        version: 4.7.4
+      jstack:
+        specifier: ^1.0.6
+        version: 1.0.6(hono@4.7.4)(react@19.0.0)(zod@3.24.2)
       lucide-react:
         specifier: ^0.482.0
         version: 0.482.0(react@19.0.0)
@@ -912,6 +918,10 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
+  hono@4.7.4:
+    resolution: {integrity: sha512-Pst8FuGqz3L7tFF+u9Pu70eI0xa5S3LPUmrNd5Jm8nTHze9FxLTK9Kaj5g/k4UcwuJSXTP65SyHOPLrffpcAJg==}
+    engines: {node: '>=16.9.0'}
+
   humanize-ms@1.2.1:
     resolution: {integrity: sha512-Fl70vYtsAFb/C06PTS9dZBo7ihau+Tu/DNCk/OyHhea07S+aeMWpFFkUaXRa8fI+ScZbEI8dfSxwY7gxZ9SAVQ==}
 
@@ -921,6 +931,20 @@ packages:
   jiti@2.4.2:
     resolution: {integrity: sha512-rg9zJN+G4n2nfJl5MW3BMygZX56zKPNVEYYqq7adpmMh4Jn2QNEwhvQlFy6jPVdcod7txZtKHWnyZiA3a0zP7A==}
     hasBin: true
+
+  jstack-shared@0.0.2:
+    resolution: {integrity: sha512-bZ295wEMcumP2ysRvuLDii2ukD/1nGKKrNCh7rVn1n+dtMLaduhLK094kqjxbEfeasVzKjKEEBh2fh8QVMsh4w==}
+    peerDependencies:
+      hono: '>=4.6.17'
+      react: '>=16.8.0'
+      zod: '>=3.24.1'
+
+  jstack@1.0.6:
+    resolution: {integrity: sha512-pZrCGRHT5OFzk+/tYwthZ3IqT5ZsstYe3Ka5rIybYikQE0fERx7+o6+5L6w84LYpcJJOuF+xda63vAx0oJP66A==}
+    peerDependencies:
+      hono: '>=4.6.17'
+      react: '>=16.8.0'
+      zod: '>=3.24.1'
 
   lightningcss-darwin-arm64@1.29.2:
     resolution: {integrity: sha512-cK/eMabSViKn/PG8U/a7aCorpeKLMlK0bQeNHmdb7qUnBkNPnL+oV5DjJUo0kqWsJUapZsM4jCfYItbqBDvlcA==}
@@ -1923,6 +1947,8 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
+  hono@4.7.4: {}
+
   humanize-ms@1.2.1:
     dependencies:
       ms: 2.1.3
@@ -1931,6 +1957,19 @@ snapshots:
     optional: true
 
   jiti@2.4.2: {}
+
+  jstack-shared@0.0.2(hono@4.7.4)(react@19.0.0)(zod@3.24.2):
+    dependencies:
+      hono: 4.7.4
+      react: 19.0.0
+      zod: 3.24.2
+
+  jstack@1.0.6(hono@4.7.4)(react@19.0.0)(zod@3.24.2):
+    dependencies:
+      hono: 4.7.4
+      jstack-shared: 0.0.2(hono@4.7.4)(react@19.0.0)(zod@3.24.2)
+      react: 19.0.0
+      zod: 3.24.2
 
   lightningcss-darwin-arm64@1.29.2:
     optional: true

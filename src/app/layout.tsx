@@ -22,13 +22,10 @@ export default function RootLayout({
 			<body className={inter.className}>
 				<ClerkProvider>
 					<TanStackQueryProvider>
-						<ThemeProvider
-							attribute="class"
-							defaultTheme="system"
-							enableSystem
-							disableTransitionOnChange
-						>
-							{children}
+						<ThemeProvider attribute="class" defaultTheme="system">
+							<div className="w-screen flex flex-col items-center">
+								{children}
+							</div>
 						</ThemeProvider>
 					</TanStackQueryProvider>
 				</ClerkProvider>

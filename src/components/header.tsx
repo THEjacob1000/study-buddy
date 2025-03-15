@@ -1,6 +1,6 @@
 "use client";
 
-import { ModeToggle } from "@/components/ModeToggle";
+import { ModeToggle } from "@/components/mode-toggle";
 import Options from "@/components/options";
 import { UserButton } from "@clerk/nextjs";
 
@@ -14,7 +14,7 @@ export default function Header({
 	setQuestionStreak,
 }: HeaderProps) {
 	return (
-		<header className="w-full flex justify-between items-center px-4 md:px-20 mb-8">
+		<header className="w-full flex justify-between items-center mb-8">
 			<h1 className="font-bold text-2xl">Study Buddy</h1>
 			<div className="flex items-center gap-4">
 				<ModeToggle />

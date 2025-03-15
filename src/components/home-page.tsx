@@ -59,13 +59,13 @@ export default function HomePage() {
 	};
 
 	return (
-		<div className="w-full flex flex-col items-center py-4 px-4 md:px-12">
+		<div className="w-screen flex flex-col items-center py-4 px-4 md:px-12 container">
 			<Header
 				questionStreak={questionStreak}
 				setQuestionStreak={setQuestionStreak}
 			/>
 
-			<main className="w-full max-w-5xl">
+			<main className="w-full">
 				{view === "documents" && (
 					<>
 						<div className="flex justify-between items-center mb-6">

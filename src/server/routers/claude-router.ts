@@ -1,6 +1,6 @@
 import { j, publicProcedure } from "../jstack";
 
-export const postRouter = j.router({
+export const claudeRouter = j.router({
 	recent: publicProcedure.query(async ({ c }) => {
 		return c.json({ bob: "bob" });
 	}),

@@ -9,59 +9,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
-import ModeSwitch from "./ModeSwitch";
 import { Button } from "./ui/button";
 
 interface OptionsProps {
-	isLocal: boolean;
-	setIsLocal: (isLocal: boolean) => void;
-	setInitial: (initial: boolean) => void;
-	hasQuestions: boolean;
-	setHasQuestions: (hasQuestions: boolean) => void;
 	questionStreak: number;
 	setQuestionStreak: (questionStreak: number) => void;
 }
 
-const Options = ({
-	isLocal,
-	setIsLocal,
-	setInitial,
-	setHasQuestions,
-	hasQuestions,
-	questionStreak,
-	setQuestionStreak,
-}: OptionsProps) => {
+const Options = ({ questionStreak, setQuestionStreak }: OptionsProps) => {
 	const router = useRouter();
-	const removeLocalKey = () => {
-		localStorage.removeItem("api");
-		setIsLocal(false);
-		router.refresh();
-	};
 
-	const removeLocalQuestions = () => {
-		localStorage.removeItem("quizQuestions");
-		localStorage.removeItem("Max Questions");
-		setHasQuestions(false);
-		setInitial(true);
-		router.refresh();
-	};
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger>
-				<Menu size={32} />
+				<Menu size={28} />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
 				<DropdownMenuLabel>Options</DropdownMenuLabel>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem disabled={!isLocal} onClick={removeLocalKey}>
-					Remove Locally Stored API Key
-				</DropdownMenuItem>
-				<DropdownMenuItem
-					disabled={!hasQuestions}
-					onClick={removeLocalQuestions}
-				>
-					Remove Locally Stored Question Data
-				</DropdownMenuItem>
 				<DropdownMenuItem
 					className="flex justify-between"
 					onSelect={(e) => e.preventDefault()}
@@ -88,8 +53,9 @@ const Options = ({
 						</Button>
 					</div>
 				</DropdownMenuItem>
-				<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-					<ModeSwitch />
+				<DropdownMenuSeparator />
+				<DropdownMenuItem onClick={() => router.refresh()}>
+					Refresh
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

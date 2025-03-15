@@ -1,5 +1,6 @@
-import { j } from "./jstack"
-import { postRouter } from "./routers/post-router"
+import { j } from "./jstack";
+import { claudeRouter } from "./routers/claude-router";
+import { documentRouter } from "./routers/document-router";
 
 /**
  * This is your base API.
@@ -8,19 +9,20 @@ import { postRouter } from "./routers/post-router"
  * @see https://jstack.app/docs/backend/app-router
  */
 const api = j
-  .router()
-  .basePath("/api")
-  .use(j.defaults.cors)
-  .onError(j.defaults.errorHandler)
+	.router()
+	.basePath("/api")
+	.use(j.defaults.cors)
+	.onError(j.defaults.errorHandler);
 
 /**
  * This is the main router for your server.
  * All routers in /server/routers should be added here manually.
  */
 const appRouter = j.mergeRouters(api, {
-  post: postRouter,
-})
+	claude: claudeRouter,
+	document: documentRouter,
+});
 
-export type AppRouter = typeof appRouter
+export type AppRouter = typeof appRouter;
 
-export default appRouter
+export default appRouter;

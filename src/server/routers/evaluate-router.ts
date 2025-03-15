@@ -16,6 +16,7 @@ export const evaluateRouter = j.router({
 		.query(async ({ c, ctx, input }) => {
 			const { userId, db } = ctx;
 			const { questionId, answer } = input;
+
 			const [question] = await db
 				.select()
 				.from(questions)

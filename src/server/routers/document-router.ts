@@ -1,13 +1,14 @@
 import { extractPdfText, generateQuestions } from "@/lib/claude-api";
-import { j, publicProcedure } from "../jstack";
+import { j, authenticatedProcedure } from "../jstack";
 import { HTTPException } from "hono/http-exception";
 import { documents, questionProgress, questions } from "../db/schema";
 import { z } from "zod";
 import { eq, and, inArray, sql } from "drizzle-orm";
 
+// Use authenticatedProcedure instead of publicProcedure to ensure all routes are protected
 export const documentRouter = j.router({
 	// Get all documents for a user
-	getDocuments: publicProcedure.query(async ({ c, ctx }) => {
+	getDocuments: authenticatedProcedure.query(async ({ c, ctx }) => {
 		const { db, userId } = ctx;
 
 		try {
@@ -69,7 +70,7 @@ export const documentRouter = j.router({
 	}),
 
 	// Delete a document
-	deleteDocument: publicProcedure
+	deleteDocument: authenticatedProcedure
 		.input(
 			z.object({
 				documentId: z.string(),
@@ -106,7 +107,7 @@ export const documentRouter = j.router({
 			}
 		}),
 
-	upload: publicProcedure
+	upload: authenticatedProcedure
 		.input(
 			z.object({
 				title: z.string(),
@@ -190,7 +191,7 @@ export const documentRouter = j.router({
 			});
 		}),
 
-	getQuestions: publicProcedure
+	getQuestions: authenticatedProcedure
 		.input(
 			z.object({
 				documentId: z.string(),
@@ -202,6 +203,16 @@ export const documentRouter = j.router({
 
 			if (!documentId) {
 				throw new HTTPException(400, { message: "Document ID is required" });
+			}
+
+			// Verify document belongs to user
+			const [userDocument] = await db
+				.select()
+				.from(documents)
+				.where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
+
+			if (!userDocument) {
+				throw new HTTPException(404, { message: "Document not found" });
 			}
 
 			// Get questions for the document

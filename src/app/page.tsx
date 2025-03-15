@@ -1,12 +1,17 @@
 "use client";
 
-import AuthWrapper from "@/components/auth/auth-wrapper";
 import HomePage from "@/components/home-page";
+import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/nextjs";
 
 export default function Home() {
 	return (
-		<AuthWrapper>
-			<HomePage />
-		</AuthWrapper>
+		<>
+			<SignedIn>
+				<HomePage />
+			</SignedIn>
+			<SignedOut>
+				<RedirectToSignIn />
+			</SignedOut>
+		</>
 	);
 }

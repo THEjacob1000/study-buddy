@@ -5,6 +5,7 @@ import { jstack } from "jstack";
 import { HTTPException } from "hono/http-exception";
 import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 interface Env {
 	Bindings: { DATABASE_URL: string };
@@ -14,7 +15,7 @@ export const j = jstack.init<Env>();
 
 /**
  * Type-safely injects database into all procedures
- * Also handles basic authentication
+ * Verifies Clerk authentication
  *
  * @see https://jstack.app/docs/backend/middleware
  */
@@ -24,70 +25,56 @@ const databaseAndAuthMiddleware = j.middleware(async ({ c, next }) => {
 	const sql = neon(DATABASE_URL);
 	const db = drizzle(sql);
 
-	// In a real application, this would verify a JWT or session token
-	// For demo purposes, we're using a simplified approach with a header
+	const clerkUser = await currentUser();
 
-	// Get user ID from request
-	let userId = c.req.header("x-user-id");
-
-	// For local development/demo, if no user ID is provided, we'll use a default
-	if (!userId) {
-		// In production, you'd want this to be more secure
-		// Get user email from query param or header for demo purposes
-		const email =
-			c.req.query("email") ||
-			c.req.header("x-user-email") ||
-			"demo@example.com";
-
-		// Try to find or create a user with this email
-		const [user] = await db.select().from(users).where(eq(users.email, email));
-
-		if (!user) {
-			// Create a demo user if none exists
-			const [newUser] = await db
-				.insert(users)
-				.values({
-					email,
-					name: "Demo User",
-				})
-				.returning();
-
-			userId = newUser?.id;
-		} else {
-			userId = user.id;
-		}
+	if (!clerkUser) {
+		throw new HTTPException(401, { message: "User not found" });
 	}
-	if (!userId) throw new HTTPException(401, { message: "Unauthorized" });
 
-	return await next({ db, userId });
+	// Find or create user in our database
+	let [dbUser] = await db
+		.select()
+		.from(users)
+		.where(eq(users.email, clerkUser.emailAddresses[0]?.emailAddress || ""));
+
+	if (!dbUser) {
+		// Create a new user record
+		const [newUser] = await db
+			.insert(users)
+			.values({
+				email: clerkUser.emailAddresses[0]?.emailAddress || "",
+				name:
+					`${clerkUser.firstName} ${clerkUser.lastName}`.trim() ||
+					clerkUser.username ||
+					null,
+			})
+			.returning();
+
+		dbUser = newUser;
+	}
+	if (!dbUser)
+		throw new HTTPException(500, { message: "Failed to create user" });
+
+	// Pass the database user ID to the route handlers
+	return await next({ db, userId: dbUser.id });
 });
 
 /**
  * Public (unauthenticated) procedures
- *
- * This is the base piece you use to build new queries and mutations on your API.
  */
 export const publicProcedure = j.procedure.use(databaseAndAuthMiddleware);
 
 /**
- * Authenticated procedures - requires a valid user
- * In a real app, this would verify the user properly
+ * Authenticated procedures - requires a valid Clerk user
  */
 export const authenticatedProcedure = publicProcedure.use(
 	j.middleware(async ({ ctx, next }) => {
-		const { db, userId } = ctx;
+		const { userId } = ctx;
 
 		if (!userId) {
-			throw new HTTPException(401, { message: "Unauthorized" });
+			throw new HTTPException(401, { message: "Authentication required" });
 		}
 
-		// Verify the user exists in the database
-		const [user] = await db.select().from(users).where(eq(users.id, userId));
-
-		if (!user) {
-			throw new HTTPException(401, { message: "Unauthorized" });
-		}
-
-		return await next({ user });
+		return await next();
 	}),
 );

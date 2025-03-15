@@ -1,7 +1,3 @@
-import type React from "react";
-import { useEffect, useState, useCallback } from "react";
-import DOMPurify from "dompurify";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "@/components/ui/button";
 import {
 	Form,
@@ -11,18 +7,22 @@ import {
 	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
+import { client } from "@/lib/client";
 import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import Markdown from "markdown-to-jsx";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Textarea } from "./ui/textarea";
-import axios from "axios";
-import Markdown from "markdown-to-jsx";
-import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Progress } from "./ui/progress";
+import { Textarea } from "./ui/textarea";
 
 type QuizQuestion = {
-	id: number;
+	id: string;
 	question: string;
 	answer: string;
 	timesCorrect: number;
@@ -30,7 +30,7 @@ type QuizQuestion = {
 };
 
 interface QuizCardProps {
-	documentId: number;
+	documentId: string;
 	questionStreak: number;
 	onComplete: () => void;
 }
@@ -48,32 +48,25 @@ const QuizCard: React.FC<QuizCardProps> = ({
 		null,
 	);
 	const [aiResponse, setAiResponse] = useState<string>("");
-	const [loading, setLoading] = useState<boolean>(false);
-	const [initialLoading, setInitialLoading] = useState<boolean>(true);
 	const [correct, setCorrect] = useState<boolean>(false);
 	const [progress, setProgress] = useState<{
 		completed: number;
 		total: number;
 	}>({ completed: 0, total: 0 });
 
-	const fetchQuestions = useCallback(async () => {
-		try {
-			setInitialLoading(true);
-			const response = await axios.get(
-				`/api/questions?documentId=${documentId}`,
-			);
-			const questionsData = response.data.questions;
+	const { isPending: initialLoading } = useQuery({
+		queryKey: ["questions", documentId],
+		queryFn: async () => {
+			const data = await client.document.getQuestions
+				.$get({
+					documentId,
+				})
+				.then((res) => res.json());
 
-			// Filter out completed questions based on streak requirement
-			const activeQuestions = questionsData.filter(
+			const activeQuestions = data.questions.filter(
 				(q: QuizQuestion) => q.timesCorrect < questionStreak,
 			);
-
 			setQuestions(activeQuestions);
-			setProgress({
-				completed: response.data.completedQuestions,
-				total: response.data.totalQuestions,
-			});
 
 			if (activeQuestions.length === 0) {
 				onComplete();
@@ -81,19 +74,15 @@ const QuizCard: React.FC<QuizCardProps> = ({
 				// Select a random question
 				const randomQuestion =
 					activeQuestions[Math.floor(Math.random() * activeQuestions.length)];
-				setCurrentQuestion(randomQuestion);
+				setCurrentQuestion(randomQuestion ?? null);
 			}
 
-			setInitialLoading(false);
-		} catch (error) {
-			console.error("Error fetching questions:", error);
-			setInitialLoading(false);
-		}
-	}, [documentId, questionStreak, onComplete]);
-
-	useEffect(() => {
-		fetchQuestions();
-	}, [fetchQuestions]);
+			return {
+				completed: data.completedQuestions,
+				total: data.totalQuestions,
+			};
+		},
+	});
 
 	const formSchema = z.object({
 		answer: z.string().min(2, "Please provide an answer"),
@@ -117,66 +106,59 @@ const QuizCard: React.FC<QuizCardProps> = ({
 		}
 	}, [questionState, questions, form]);
 
-	const onSubmit = useCallback(
-		async (values: z.infer<typeof formSchema>) => {
+	const { mutate: onSubmit, isPending: loading } = useMutation({
+		mutationKey: ["evaluate", currentQuestion?.id],
+		mutationFn: async (values: z.infer<typeof formSchema>) => {
 			if (!currentQuestion) return;
 
-			setLoading(true);
-			try {
-				const response = await axios.post("/api/evaluate", {
+			return await client.evaluate.evaluateAnswer
+				.$post({
 					questionId: currentQuestion.id,
 					answer: values.answer,
-				});
+				})
+				.then((res) => res.json());
+		},
+		onSuccess: (data) => {
+			if (!currentQuestion) return;
+			const isCorrect = data?.correct;
+			if (isCorrect) {
+				setCorrect(true);
+				setQuestions((prev) =>
+					prev
+						.map((q) =>
+							q.id === currentQuestion.id
+								? {
+										...q,
+										timesCorrect: q.timesCorrect + 1,
+										completed: q.timesCorrect + 1 >= questionStreak,
+									}
+								: q,
+						)
+						.filter((q) => q.timesCorrect < questionStreak),
+				);
 
-				const sanitizedResponse = DOMPurify.sanitize(response.data.message);
-				const isCorrect = response.data.correct;
-				setCorrect(isCorrect);
-
-				// Update local state to reflect the change
-				if (isCorrect) {
-					setQuestions((prev) =>
-						prev
-							.map((q) =>
-								q.id === currentQuestion.id
-									? {
-											...q,
-											timesCorrect: q.timesCorrect + 1,
-											completed: q.timesCorrect + 1 >= questionStreak,
-										}
-									: q,
-							)
-							.filter((q) => q.timesCorrect < questionStreak),
-					);
-
-					// Update progress
-					if (currentQuestion.timesCorrect + 1 >= questionStreak) {
-						setProgress((prev) => ({
-							...prev,
-							completed: prev.completed + 1,
-						}));
-					}
+				// Update progress
+				if (currentQuestion.timesCorrect + 1 >= questionStreak) {
+					setProgress((prev) => ({
+						...prev,
+						completed: prev.completed + 1,
+					}));
 				}
+			}
 
-				setAiResponse(sanitizedResponse);
-				setQuestionState("answer");
-				form.reset();
+			setAiResponse(data?.message ?? "");
+			setQuestionState("answer");
+			form.reset();
 
-				// Check if all questions are completed
-				if (
-					questions.length <= 1 &&
-					isCorrect &&
-					currentQuestion.timesCorrect + 1 >= questionStreak
-				) {
-					setTimeout(() => onComplete(), 2000);
-				}
-			} catch (error) {
-				console.error("Error evaluating answer:", error);
-			} finally {
-				setLoading(false);
+			if (
+				questions.length <= 1 &&
+				isCorrect &&
+				currentQuestion.timesCorrect + 1 >= questionStreak
+			) {
+				setTimeout(() => onComplete(), 2000);
 			}
 		},
-		[currentQuestion, form, questionStreak, questions.length, onComplete],
-	);
+	});
 
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
@@ -186,7 +168,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
 				questionState === "question"
 			) {
 				event.preventDefault();
-				form.handleSubmit(onSubmit)();
+				form.handleSubmit((values) => onSubmit(values))();
 			}
 			if (event.key === "Enter" && questionState === "answer") {
 				handleCardClick();
@@ -277,7 +259,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
 							<CardContent className="w-full md:px-12 px-2 pt-12">
 								<Form {...form}>
 									<form
-										onSubmit={form.handleSubmit(onSubmit)}
+										onSubmit={form.handleSubmit((values) => onSubmit(values))}
 										className="flex w-full md:justify-between items-end flex-wrap gap-4"
 									>
 										<FormField

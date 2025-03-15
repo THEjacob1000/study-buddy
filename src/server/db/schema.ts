@@ -97,3 +97,8 @@ export const questionProgressRelations = relations(
 		}),
 	}),
 );
+
+export type User = typeof users.$inferSelect;
+export type Document = typeof documents.$inferSelect;
+export type Question = typeof questions.$inferSelect;
+export type QuestionProgress = typeof questionProgress.$inferSelect;

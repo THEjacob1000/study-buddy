@@ -1,8 +1,9 @@
 import { extractPdfText, generateQuestions } from "@/lib/claude-api";
 import { j, publicProcedure } from "../jstack";
 import { HTTPException } from "hono/http-exception";
-import { documents, questions } from "../db/schema";
+import { documents, questionProgress, questions } from "../db/schema";
 import { z } from "zod";
+import { eq, and, inArray } from "drizzle-orm";
 
 export const documentRouter = j.router({
 	upload: publicProcedure
@@ -87,6 +88,62 @@ export const documentRouter = j.router({
 				success: true,
 				document: savedDocument,
 				questions: savedQuestions,
+			});
+		}),
+	getQuestions: publicProcedure
+		.input(
+			z.object({
+				documentId: z.string(),
+			}),
+		)
+		.query(async ({ c, ctx, input }) => {
+			const { db, userId } = ctx;
+			const { documentId } = input;
+
+			if (!documentId) {
+				// Default placeholder user ID
+				throw new HTTPException(400, { message: "Document ID is required" });
+			}
+
+			// Get questions for the document
+			const documentQuestions = await db
+				.select()
+				.from(questions)
+				.where(eq(questions.documentId, documentId));
+
+			// Get user progress for these questions
+			const questionIds = documentQuestions.map((q) => q.id);
+			const userProgress = await db
+				.select()
+				.from(questionProgress)
+				.where(
+					and(
+						eq(questionProgress.userId, userId),
+						inArray(questionProgress.questionId, questionIds),
+					),
+				);
+
+			// Combine questions with progress
+			const questionsWithProgress = documentQuestions.map((question) => {
+				const progress = userProgress.find(
+					(p) => p.questionId === question.id,
+				) || {
+					timesCorrect: 0,
+					completed: false,
+				};
+
+				return {
+					...question,
+					timesCorrect: progress.timesCorrect,
+					completed: progress.completed,
+				};
+			});
+
+			return c.json({
+				questions: questionsWithProgress,
+				totalQuestions: documentQuestions.length,
+				completedQuestions: questionsWithProgress.filter((q) => q.completed)
+					.length,
 			});
 		}),
 });

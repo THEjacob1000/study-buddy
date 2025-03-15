@@ -6,14 +6,14 @@ import { questionProgress, questions } from "../db/schema";
 import { j, publicProcedure } from "../jstack";
 
 export const evaluateRouter = j.router({
-	recent: publicProcedure
+	evaluateAnswer: publicProcedure
 		.input(
 			z.object({
 				questionId: z.string(),
 				answer: z.string(),
 			}),
 		)
-		.query(async ({ c, ctx, input }) => {
+		.mutation(async ({ c, ctx, input }) => {
 			const { userId, db } = ctx;
 			const { questionId, answer } = input;
 

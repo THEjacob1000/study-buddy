@@ -1,6 +1,7 @@
 import { j } from "./jstack";
 import { claudeRouter } from "./routers/claude-router";
 import { documentRouter } from "./routers/document-router";
+import { evaluateRouter } from "./routers/evaluate-router";
 
 /**
  * This is your base API.
@@ -21,6 +22,7 @@ const api = j
 const appRouter = j.mergeRouters(api, {
 	claude: claudeRouter,
 	document: documentRouter,
+	evaluate: evaluateRouter,
 });
 
 export type AppRouter = typeof appRouter;

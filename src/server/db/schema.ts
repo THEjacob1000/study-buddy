@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
 	boolean,
 	index,
+	integer,
 	pgTable,
 	text,
 	timestamp,
@@ -56,7 +57,7 @@ export const questionProgress = pgTable("question_progress", {
 	questionId: uuid("question_id")
 		.notNull()
 		.references(() => questions.id, { onDelete: "cascade" }),
-	timesCorrect: text("times_correct").default("0").notNull(),
+	timesCorrect: integer("times_correct").default(0).notNull(),
 	lastAttempted: timestamp("last_attempted"),
 	completed: boolean("completed").default(false).notNull(),
 });

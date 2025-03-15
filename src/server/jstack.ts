@@ -20,7 +20,7 @@ const databaseMiddleware = j.middleware(async ({ c, next }) => {
 	const sql = neon(DATABASE_URL);
 	const db = drizzle(sql);
 
-	return await next({ db });
+	return await next({ db, userId: "string" });
 });
 
 /**

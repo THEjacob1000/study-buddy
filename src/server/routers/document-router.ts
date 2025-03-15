@@ -3,9 +3,109 @@ import { j, publicProcedure } from "../jstack";
 import { HTTPException } from "hono/http-exception";
 import { documents, questionProgress, questions } from "../db/schema";
 import { z } from "zod";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 
 export const documentRouter = j.router({
+	// Get all documents for a user
+	getDocuments: publicProcedure.query(async ({ c, ctx }) => {
+		const { db, userId } = ctx;
+
+		try {
+			// Get all documents for the user
+			const userDocuments = await db
+				.select({
+					id: documents.id,
+					title: documents.title,
+					createdAt: documents.createdAt,
+				})
+				.from(documents)
+				.where(eq(documents.userId, userId))
+				.orderBy(sql`${documents.createdAt} DESC`);
+
+			// For each document, get the question count and completed count
+			const documentsWithStats = await Promise.all(
+				userDocuments.map(async (doc) => {
+					// Get all questions for this document
+					const documentQuestions = await db
+						.select({ id: questions.id })
+						.from(questions)
+						.where(eq(questions.documentId, doc.id));
+
+					const questionIds = documentQuestions.map((q) => q.id);
+
+					// Get progress records for these questions
+					const progressRecords = await db
+						.select()
+						.from(questionProgress)
+						.where(
+							and(
+								eq(questionProgress.userId, userId),
+								inArray(questionProgress.questionId, questionIds),
+							),
+						);
+
+					// Count completed questions
+					const completedCount = progressRecords.filter(
+						(p) => p.completed,
+					).length;
+
+					return {
+						id: doc.id,
+						title: doc.title,
+						createdAt: doc.createdAt.toISOString(),
+						questionsCount: documentQuestions.length,
+						completedCount,
+					};
+				}),
+			);
+
+			return c.json({
+				documents: documentsWithStats,
+			});
+		} catch (error) {
+			console.error("Error fetching documents:", error);
+			throw new HTTPException(500, { message: "Failed to fetch documents" });
+		}
+	}),
+
+	// Delete a document
+	deleteDocument: publicProcedure
+		.input(
+			z.object({
+				documentId: z.string(),
+			}),
+		)
+		.mutation(async ({ c, ctx, input }) => {
+			const { db, userId } = ctx;
+			const { documentId } = input;
+
+			try {
+				// Verify document belongs to user
+				const [userDocument] = await db
+					.select()
+					.from(documents)
+					.where(
+						and(eq(documents.id, documentId), eq(documents.userId, userId)),
+					);
+
+				if (!userDocument) {
+					throw new HTTPException(404, { message: "Document not found" });
+				}
+
+				// Delete document (questions and progress will cascade)
+				await db.delete(documents).where(eq(documents.id, documentId));
+
+				return c.json({
+					success: true,
+					message: "Document deleted successfully",
+				});
+			} catch (error) {
+				if (error instanceof HTTPException) throw error;
+				console.error("Error deleting document:", error);
+				throw new HTTPException(500, { message: "Failed to delete document" });
+			}
+		}),
+
 	upload: publicProcedure
 		.input(
 			z.object({
@@ -15,8 +115,7 @@ export const documentRouter = j.router({
 			}),
 		)
 		.mutation(async ({ c, ctx, input }) => {
-			const placeholderUserId = "1";
-			const { db } = ctx;
+			const { db, userId } = ctx;
 			const { title, file: fileRaw, textContent } = input;
 			const file = fileRaw as File | null;
 
@@ -56,7 +155,7 @@ export const documentRouter = j.router({
 			const [savedDocument] = await db
 				.insert(documents)
 				.values({
-					userId: placeholderUserId,
+					userId,
 					title: title || "Untitled Document",
 					content: content,
 					fileType: fileType,
@@ -90,6 +189,7 @@ export const documentRouter = j.router({
 				questions: savedQuestions,
 			});
 		}),
+
 	getQuestions: publicProcedure
 		.input(
 			z.object({
@@ -101,7 +201,6 @@ export const documentRouter = j.router({
 			const { documentId } = input;
 
 			if (!documentId) {
-				// Default placeholder user ID
 				throw new HTTPException(400, { message: "Document ID is required" });
 			}
 

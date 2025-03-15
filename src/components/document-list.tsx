@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import {
 	Card,
 	CardContent,
@@ -8,11 +8,12 @@ import {
 } from "./ui/card";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
-import { FileText, Loader2, RefreshCw, Trash } from "lucide-react";
-import axios from "axios";
+import { FileText, Loader2, Trash } from "lucide-react";
+import { client } from "@/lib/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type Document = {
-	id: number;
+	id: string;
 	title: string;
 	createdAt: string;
 	questionsCount: number;
@@ -22,7 +23,7 @@ type Document = {
 interface DocumentListProps {
 	documents: Document[];
 	isLoading: boolean;
-	onSelect: (documentId: number) => void;
+	onSelect: (documentId: string) => void;
 	onRefresh: () => void;
 }
 
@@ -32,20 +33,27 @@ const DocumentList: React.FC<DocumentListProps> = ({
 	onSelect,
 	onRefresh,
 }) => {
-	const [deletingId, setDeletingId] = React.useState<number | null>(null);
+	const queryClient = useQueryClient();
 
-	const handleDeleteDocument = async (documentId: number) => {
+	// Use React Query mutation for deleting documents
+	const { mutate: deleteDocument, isPending: isDeleting } = useMutation({
+		mutationFn: async (documentId: string) => {
+			return await client.document.deleteDocument
+				.$post({
+					documentId,
+				})
+				.then((res) => res.json());
+		},
+		onSuccess: () => {
+			// Invalidate documents query to refresh the list
+			queryClient.invalidateQueries({ queryKey: ["documents"] });
+			onRefresh();
+		},
+	});
+
+	const handleDeleteDocument = async (documentId: string) => {
 		if (window.confirm("Are you sure you want to delete this document?")) {
-			try {
-				setDeletingId(documentId);
-				await axios.delete(`/api/documents/${documentId}`);
-				onRefresh();
-			} catch (error) {
-				console.error("Error deleting document:", error);
-				alert("Failed to delete document");
-			} finally {
-				setDeletingId(null);
-			}
+			deleteDocument(documentId);
 		}
 	};
 
@@ -93,9 +101,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
 								variant="outline"
 								size="sm"
 								onClick={() => handleDeleteDocument(doc.id)}
-								disabled={deletingId === doc.id}
+								disabled={isDeleting}
 							>
-								{deletingId === doc.id ? (
+								{isDeleting ? (
 									<Loader2 className="h-4 w-4 animate-spin" />
 								) : (
 									<Trash className="h-4 w-4" />
